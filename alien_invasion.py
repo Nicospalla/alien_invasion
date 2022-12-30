@@ -30,12 +30,7 @@ class AlienInvasion:
             self._check_events()
             self.ship.update()
             self.bullets.update()
-
-            #Nos desasemos de las balas que ya se dispararon
-            for bullet in self.bullets.copy():
-                if bullet.rect.bottom <= 0:
-                    self.bullets.remove(bullet)
-
+            self._update_bullets()
             self._update_screen()
 
     def _update_screen(self):
@@ -81,8 +76,15 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Crea una nueva bala y la agrupa en pygame.Group"""
-        new_bullet = Bullet(self)
-        self.bullets.add(new_bullet)
+        if  len(self.bullets) < self.settings.bullets_allowed: 
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+    #Nos desasemos de las balas que ya se dispararon
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
 
 if __name__ == "__main__":
     # Hace una instancia del juego y lo ejecuta

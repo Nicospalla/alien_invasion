@@ -9,6 +9,7 @@ from ship import Ship
 from bullet import Bullet
 from alien import Alien
 from button import Button
+from scoreboard import ScoreBoard
 
 
 class AlienInvasion:
@@ -28,6 +29,7 @@ class AlienInvasion:
         pygame.display.set_caption('Alien Invasion')
         #Instanciamos las esttadisticas del juego
         self.stats = GameStats(self)
+        self.sb = ScoreBoard(self)
 
         # Inicializa clase ship y crea la nave
         self.ship = Ship(self)
@@ -61,6 +63,8 @@ class AlienInvasion:
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
 
+        self.sb.show_score()
+
         #Dibuja el boton de play si la bandera de juego esta inactiva
         if not self.stats.game_active:
             self.play_button.draw_button()
@@ -86,7 +90,11 @@ class AlienInvasion:
     def _check_play_button(self, mouse_pos):
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not  self.stats.game_active:
+            self.settings.initialize_dynamic_settings()
             self.stats.reset_stats()
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
             sleep(0.2)
             self.stats.game_active = True
 
@@ -98,6 +106,7 @@ class AlienInvasion:
             self._create_fleet()
             self.ship.center_ship()
 
+            pygame.mouse.set_visible(False)
 
     def _check_keydown_events(self, event):
         '''Eventos al presionar una tecla'''
@@ -136,10 +145,24 @@ class AlienInvasion:
         #Si hay, se deshace de ambos
         collisions = pygame.sprite.groupcollide(
             self.bullets, self.aliens, True,True)
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
         if not self.aliens:
-            self.bullets.empty()
-            self._create_fleet()
-    
+            self._start_new_level()
+
+    def _start_new_level(self):
+        """Cuando no quedan aliens en pantalla, inicia un nuevo nivel,
+        esta vez mas dificil"""
+        self.bullets.empty()
+        self._create_fleet()
+        self.settings.increase_speed()
+        #aumenta nivel en pantalla
+        self.stats.level += 1
+        self.sb.prep_level()
+
     def _update_aliens(self):
         '''Comprueba si la flota esta en un borde,
         despues actualiza las posiciones de todos los aliens de la flota'''
@@ -193,6 +216,7 @@ class AlienInvasion:
         #Disminuye la canitdadd de naves restantes si es mayor a las restantes
         if self.stats.ships_left > 0:
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             #Se deshace de los aliens y balas restantes
             self.aliens.empty()
@@ -207,6 +231,7 @@ class AlienInvasion:
         else:
             self.aliens.empty()
             self.bullets.empty()
+            pygame.mouse.set_visible(True)
             self.stats.game_active = False
             
 
